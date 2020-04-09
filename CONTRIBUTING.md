@@ -1,50 +1,67 @@
 # Contributing to Serverless Benchmarks
 
-It's awesome that you want to contribute to our benchmarks! You can contribute in several ways, like:
+It's fantastic that you want to contribute to our benchmarks! You can contribute in several ways, like:
 
 * Creating new benchmarks
 * Fixing existing bugs
 * Improving documentation and guidelines
 
-To help you on this journey we've created this document that will guide you through several steps, like [creating a new benchmark](#creating-a-new-benchmark), [understanding our folder structure](#understanding-our-folder-structure) and [documenting-a-benchmark](#documenting-a-benchmark).
+To help you on this journey, we've created this document that guides you through several steps, like [creating a new benchmark](#creating-a-new-benchmark), [methodology](#methodology) and [documenting-a-benchmark](#documenting-a-benchmark).
 
 ## Table of contents
 
 * [Contributing to Serverless Benchmarks](#)
   * [How it works](#how-it-works)
   * [Methodology](#methodology)
-  * [Understanding our folder structure](#understanding-our-folder-structure)
   * [Creating a new benchmark](#creating-a-new-benchmark)
   * [Documenting a benchmark](#documenting-a-benchmark)
   * [Versioning](#versioning)
 
 ## How it works
 
-Our repository contains a package of assets for each tool benchmark. We have **scripts**, **notebooks** and **interactive scenarios** for each one of those tools. The way it works is pretty simple, the main idea is to provide a knowledge center to host every information regarding the performance of the most used tools.
+We've separated this project into three major sections:
 
-If you want to understand how we are doing our tests, check the [methodology section](#methodology).
+* `provisioner`: responsible for provisioning resources to execute the benchmark
+* `benchmarker`: responsible for setting up and executing the benchmark itself
+* `results`: responsible for aggregating the results and notes regarding our benchmark
+
+Each section has a dedicated folder on the root of our repository. In the following headlines, I'm going to give you some details regarding how each of those contexts works.
+
+### Provisioner
+
+[Hosted on the provisioner folder](provisioner), this application uses [Terraform](https://www.terraform.io/) to provide all the required resources for running our tests. To do so, it connects with the cloud platform and creates the desired infrastructure for our tests.
+
+Right now, we're only supporting AWS as our provider, but we can improve this soon.
+
+### Benchmarker
+
+[Hosted on the benchmarker folder](benchmarker), this application uses [Ansible](https://www.ansible.com) to automates the configuration of our Kubernetes cluster and all benchmarked tools. Also, it has a dedicated playbook for running the tests on each of those tools.
+
+### Results
+
+[Hosted on the results folder](results), this application uses markdown and some plugins to host detailed information regarding the benchmark itself.
 
 ## Methodology
 
-The most important features to worry, for every FaaS tool, are:
+The essential features, for every FaaS tool, are:
 
 * Reliability
 * Response time
 * Resources consumption
 * Throughput
 
-To test those features we're doing the following benchmarks:
+To test those features, we're doing the following benchmarks:
 
 ### Response time test
 
-On this test, we're going to open a single connection and send as many requests as we can in a 10 seconds window to a simple function. Since we have only a single connection we can measure the following:
+On this test, we're going to open a single connection and send as many requests as we can in a 10 seconds window to a simple function. Since we have only a single connection, we can measure the following:
 
 * **Response time:**** how fast does the tool responds. With our test, we can measure the slowest and fastest response of each tool
 * **Throughput:** how much does the tool handle. With our test, we can see how many requests did the tool handled and get requests per seconds metric
 
-### Load test
+### Scalability test
 
-On this test we're going to open 200 connects and send as many requests as we can in a 5 minutes window to a simple function. With this, we can measure the following:
+On this test, we're going to open 200 connects and send as many requests as we can in a 5 minutes window to a simple function. With this, we can measure the following:
 
 * **Reliability:** this is a pretty hard test. With it, we can see how does the tool respond to a load like this
 * **Resources consumption:** with a high load we can see how much CPU and computer resources were necessary for the tool to handle it
@@ -52,24 +69,7 @@ On this test we're going to open 200 connects and send as many requests as we ca
 
 ### Important note
 
-The benchmark results may change depending on your hardware. Every `README.md` file at the root of the tool folder has a section dedicated to declaring the hardware used on the last benchmark made for that given tool.
-
-## Understanding our folder structure
-
-On the root of our repository there are two main folders:
-
-* **benchmarks:** all benchmarks for every tool
-* **scripts:** common shared scripts
-
-Inside the `benchmarks` folder, we have one folder for each tool. You can see a list of available tools on [our README file section](README.md#available-benchmarks). For each tool we have the following folders:
-
-* **scripts:** useful scripts to execute the benchmark
-* **notebooks:** text files with useful annotations
-* **scenario:** Katacoda interactive scenario, explaining every step to execute the benchmark manually
-
-Note that the contents of each folder may change, depending on the tool. There is also a `README` file on the root of each tool's directory that will contain all the relevant information regarding that tool benchmark, like results, how to run that benchmark, prerequisites, and others.
-
-**IMPORTANT:** the prerequisites for each tool may change, but they all extend a global prerequisite script located on [scripts/check-prerequisites.sh](scripts/check-prerequisites.sh) containing some basic prerequisites that are common for every tool. Also, those scripts don't install the required prerequisites, they only check if you have them installed.
+The benchmark results may change depending on the provisioned hardware. The results file contains a section dedicated to logging the last provisioned hardware used on the tests.
 
 ## Creating a new benchmark
 

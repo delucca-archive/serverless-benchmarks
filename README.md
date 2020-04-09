@@ -4,85 +4,102 @@
   <br>
 </p>
 <p align="center">
-A collection of benchmark tests for the most famous serverless tools
+Benchmarking the most famous serverless tools
 </p>
 
 ## 📖 About this
 
-Serverless is a [quite popular topic nowadays](https://trends.google.com/trends/explore?date=today%205-y&q=serverless), and with that popularity came an overwhelming amount of new solutions. This repository focus on providing an easy way to compare the Function as a Service (FaaS, for short) solutions. Here, we're going to keep all the scripts and benchmark results for those tools.
+Serverless is a [quite a popular topic nowadays](https://trends.google.com/trends/explore?date=today%205-y&q=serverless), and with that popularity came an overwhelming amount of new solutions. This repository focus on providing an easy way to compare the Function as a Service (FaaS, for short) solutions. Here, we're going to keep all the scripts and benchmark results for those tools.
 
 * [Table of contents](#)
   * [Getting started](#-getting-started)
   * [Available benchmarks](#-available-benchmarks)
   * [Prerequisites](#-prerequisites)
-  * [Running a benchmark](#-running-a-benchmark)
+  * [Executing all benchmarks](#-executing-all-benchmarks)
+  * [Additional commands](#-additional-commands)
+  * [Notes and results](#-notes-and-results)
   * [Contributing](#-contributing)
   * [Useful links](#-useful-links)
   * [License](#-license)
 
 ## 🤖 Getting started
 
-This repository is organized based on each tool we're testing. We have three main assets for each tool:
+Our benchmark relies on a [custom methodology](CONTRIBUTING.md#methodology) that requires the execution of some standardized tests.
 
-* **Scripts:** shell scripts to set up and execute our benchmarks
-* **Notebooks:** text files containing useful information regarding the benchmark, like results, methodology, and walkthrough
-* **Scenarios:** Katacoda scenarios containing a step-by-step guide to running the benchmark
+Each tool requires a set of steps to reproduce our benchmark methodology, to automate that we're using [Terraform](https://www.terraform.io/) as our automated provision tool, and [Ansible](https://www.ansible.com/) for IT automation.
 
-All tools have their own folder, inside the `benchmarks` folder on this repository. There is also a `scripts` folder on the root of the repository. There we're going to place all global scripts that are used across multiple tools. To see all available benchmarks of this repository, check [the next section](#-available-benchmarks).
+**Terraform** handles the basic provisioning of our cloud platform while **Ansible** uses the provisioned infrastructure to configure our Kubernetes cluster, setup each tool, and run the tests.
 
-If you want to run a specific benchmark, go on the [running a benchmark section](#-running-a-benchmark).
+**IMPORTANT:** We're using [AWS](https://aws.amazon.com/) as our primary (and only) cloud platform. The test architecture allows the usage of their [free tier images](https://aws.amazon.com/free/), so you can create a new account and execute the tests with no expenses.
+
+On the next sections of this document you may learn more about [prerequisites](#-prerequisites) and how to [execute our benchmarks](#-executing-all-benchmars)
 
 ## 🌱 Available benchmarks
 
-On this section we're going to list all available benchmarks on this repository so far. Click on their names to learn more:
+In this section, we're going to list all available benchmarks on this repository so far. After the tool name, we've placed relevant shortcuts for you to navigate on our benchmarks.
 
-* [Kubeless](benchmarks/kubeless)
-* [Fission](benchmarks/fission)
-* [OpenFaas](benchmarks/openfaas)
-* [Nuclio](benchmarks/nuclio)
+* **Kubeless**: [website](https://kubeless.io/) . [results](results/README.md#kubeless) . [more](results/kubeless)
+* **Fission**: [website](https://fission.io) . [results](results/README.md#fission) . [more](results/fission)
+* **OpenFaas**: [website](http://openfaas.com/) . [results](results/README.md#openfaas) . [more](results/openfaas)
+* **Nuclio**: [website](https://nuclio.io) . [results](results/README.md#nuclio) . [more](results/nuclio)
+* **Knative**: [website](https://knative.dev) . [results](results/README.md#knative) . [more](results/knative)
 
 If you're searching for a tool we haven't done the benchmark yet, please open a new [feature request](https://github.com/odelucca/serverless-benchmarks/labels/feature-request).
 
 ## 🖥️ Prerequisites
 
-Each tool has its own prerequisites, which is usually listed on their `README.md` file at the root folder of that given tool. But every tool has some common prerequisites, those are listed here:
+Before executing our benchmark, you may need the following tools installed on your local environment:
 
-* [Minikube](https://kubernetes.io/docs/tasks/tools/install-minikube/)
-* [Kubectl](https://kubernetes.io/docs/tasks/tools/install-kubectl/)
-* [Hey](https://github.com/rakyll/hey)
+* [Terraform CLI](https://www.terraform.io/downloads.html)
+* [Ansible CLI](https://docs.ansible.com/ansible/latest/installation_guide/index.html)
 
-We've developed a script to automatically check if you have all the prerequisites installed. It is placed inside [scripts/check-prerequisites.sh](scripts/check-prerequisites.sh). **IMPORTANT** The script will not install the prerequisites (since it depends on your distro), it will only check if your environment can run our benchmarks.
+To check if your local environment matches the prerequisites, you can run the following command:
 
-Also, there is a `check-prerequisites` script on each tool. Those scripts extend the global script, checking for both common and tool-specific prerequisites.
-
-## ⚙ Running a benchmark
-
-Every benchmark has the same folder structure:
-
-``` text
-serverless-benchmarks
-│
-├── benchmarks
-| ├── <tool>
-| |   ├── scripts 
-| |   |   ├── <other-scripts>
-| |   |   ├── setup.sh
-| |   |   └── run.sh
-| |   └── <other-files>
-| └── <other-tools>
-└── ...
+```sh
+make check_prerequisites
 ```
 
-The `setup.sh` and `run.sh` will always exist. Before executing the `run` script you must configure your environment. Below I'm going to show you a simple snippet that will set up and execute the benchmark test for the `kubeless` tool:
+## ⚙ Executing all benchmarks
 
-``` sh
-# assuming you're on the repository's root folder
-TOOL_SCRIPTS="./benchmarks/kubeless/scripts" && \
-$TOOL_SCRIPTS/setup.sh && \
-$TOOL_SCRIPTS/run.sh
+To start a new routine from scratch, you can run:
+
+```shell
+make benchmark
 ```
 
-After executing that snippet, just wait some minutes to finish installing and executing your benchmark (the amount of time depends on the tool, but it is usually ~10m).
+This command does the following:
+
+1. Prompts for required cloud information to set up your Terraform integration
+2. Provision the required resources in your cloud platform
+3. Waits for all provisioned resources to be available
+4. Runs Ansible playbook to configure the Kubernetes cluster
+5. Runs all Ansible playbooks to setup every tool on our cluster
+6. Runs all Ansible playbooks to execute the benchmark tests
+7. Exports the results for our tests
+
+You can also run only parts of the benchmark. To do so, take a look on the  [additional commands](#-additional-commands) section.
+
+## 🕹️ Additional commands
+
+Additionally, we have other commands that run only a part of our entire benchmark pipeline. They're all available as `make` commands:
+
+* `provision`: applies the Terraform desired infrastructure on your cloud platform
+* `provision_config`: setup the Terraform integration
+* `provision_wait`: waits for the required resources to be available on your cloud platform
+* `setup`: runs the Ansible playbook to set up our Kubernetes cluster and, afterward, executes all playbooks to set up our tools on the cluster
+* `setup_cluster`: runs only the Ansible playbook to set up our Kubernetes cluster
+* `setup_tools`: runs only the Ansible playbook to set up our serverless tools
+* `run_tests`: runs all Ansible playbooks for all tests on all benchmarked tools
+* `run_tests_response_time`: runs all Ansible playbooks for all benchmarked tools to test only their response time
+* `run_tests_scalability`: runs all Ansible playbooks for all benchmarked tools to test only their scalability
+* `run_<tool>`: runs the Ansible playbook for all tests on the given tool
+* `run_<tool>_<test>`: runs the Ansible playbook to test only the given tool with the provided test
+
+## 💡 Notes and results
+
+You can find our analysis, technical inspections, and relevant results at the `results` folder on the repository root. You can [click here](results) to go there.
+
+That folder contains documents comparing general aspects of all tools. Also, there is a specific folder for each tool that contains a detailed analysis of that tool.
 
 ## 💻 Contributing
 
@@ -90,9 +107,9 @@ Contributions are what make the open source such an amazing place to learn, insp
 
 ## 🔗 Useful links
 
-* [Check common prerequisites scripts](scripts/check-prerequisites.sh)
-* [Setup all tools script](scripts/setup.sh)
-* [Run all benchmarks script](scripts/run.sh)
+* [Provisioner folder](provisioner)
+* [Benchmarker folder](benchmarker)
+* [Results folder](results)
 
 ## 🔓 License
 
